@@ -25,7 +25,17 @@ const envSchema = z.object({
 export type AppEnv = z.infer<typeof envSchema>;
 
 export function getEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
-  return envSchema.parse(source);
+  try {
+    return envSchema.parse(source);
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      const missingKeys = error.issues.map((issue: z.ZodIssue) => issue.path.join(".")).join(", ");
+      throw new Error(`Invalid or missing environment variables: ${missingKeys}`);
+    }
+
+    throw error;
+  }
 }
+
 
 export const env = getEnv();
